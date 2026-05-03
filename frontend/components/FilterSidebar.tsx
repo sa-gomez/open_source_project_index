@@ -17,6 +17,17 @@ export function FilterSidebar() {
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-4">
       <div>
+        <label className={labelClass}>Search Query</label>
+        <input
+          type="text"
+          value={filters.query}
+          onChange={(e) => setFilter('query', e.target.value)}
+          placeholder="e.g. machine learning"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
         <label className={labelClass}>Language</label>
         <input
           type="text"
