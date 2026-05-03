@@ -10,6 +10,9 @@ export async function searchRepos(filters: FilterState): Promise<RepoResult[]> {
   if (filters.minStars !== null) params.set('min_stars', String(filters.minStars))
   if (filters.minSizeKb !== null) params.set('min_size_kb', String(filters.minSizeKb))
   if (filters.pushedAfter) params.set('pushed_after', filters.pushedAfter)
+  for (const topic of filters.topics) {
+    params.append('topics', topic)
+  }
   params.set('limit', String(filters.limit))
 
   const res = await fetch(`${API_BASE}/search?${params.toString()}`)

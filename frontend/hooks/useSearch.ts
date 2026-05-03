@@ -7,7 +7,10 @@ export function useSearch() {
 
   return useQuery({
     queryKey: ['search', submittedFilters],
-    queryFn: () => searchRepos(submittedFilters!),
+    queryFn: () => {
+      if (!submittedFilters) throw new Error('submittedFilters is null')
+      return searchRepos(submittedFilters)
+    },
     enabled: submittedFilters !== null,
   })
 }

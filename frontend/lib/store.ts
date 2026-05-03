@@ -17,6 +17,7 @@ const defaultFilters: FilterState = {
   minSizeKb: null,
   pushedAfter: null,
   limit: 20,
+  topics: [],
 }
 
 export const useStore = create<StoreState>((set) => ({

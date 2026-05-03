@@ -27,4 +27,5 @@ export interface FilterState {
   minSizeKb: number | null
   pushedAfter: string | null
   limit: number
+  topics: string[]
 }
