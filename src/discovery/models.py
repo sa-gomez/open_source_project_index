@@ -7,6 +7,7 @@ class SearchParams(BaseModel):
     language: str | None = None
     topics: list[str] = []
     min_stars: int = 1000
+    min_size_kb: int | None = None
     pushed_after: date | None = None
     limit: int = 20
 

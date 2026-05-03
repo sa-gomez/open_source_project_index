@@ -26,6 +26,9 @@ def _build_query(params: SearchParams) -> str:
     for topic in params.topics:
         parts.append(f"topic:{topic}")
 
+    if params.min_size_kb is not None:
+        parts.append(f"size:>={params.min_size_kb}")
+
     if params.pushed_after:
         parts.append(f"pushed:>={params.pushed_after.isoformat()}")
 
@@ -75,4 +78,5 @@ def search_repos(params: SearchParams) -> list[RepoResult]:
 
     items = response.json().get("items", [])
     repos = [_parse_repo(item) for item in items[: params.limit]]
-    return score_repos(repos)
+    scored = score_repos(repos)
+    return sorted(scored, key=lambda r: r.quality_score, reverse=True)
