@@ -71,6 +71,15 @@ def test_search_timeout_returns_504() -> None:
     assert response.status_code == 504
 
 
+def test_search_request_error_returns_502() -> None:
+    with patch(
+        "api.routers.search.search_repos",
+        side_effect=httpx.RequestError("Connection failed"),
+    ):
+        response = client.get("/search")
+    assert response.status_code == 502
+
+
 def test_search_invalid_limit_too_high_returns_422() -> None:
     response = client.get("/search?limit=999")
     assert response.status_code == 422
