@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
@@ -45,16 +45,18 @@ test('does not fetch before search is submitted', () => {
 })
 
 test('fetches and returns results after submitSearch', async () => {
-  useStore.setState({
-    submittedFilters: {
-      query: '',
-      language: 'python',
-      minStars: 1000,
-      minSizeKb: null,
-      pushedAfter: null,
-      limit: 20,
-      topics: [],
-    },
+  act(() => {
+    useStore.setState({
+      submittedFilters: {
+        query: '',
+        language: 'python',
+        minStars: 1000,
+        minSizeKb: null,
+        pushedAfter: null,
+        limit: 20,
+        topics: [],
+      },
+    })
   })
 
   const { result } = renderHook(() => useSearch(), { wrapper })
@@ -73,16 +75,18 @@ test('surfaces error message on 502', async () => {
     ),
   )
 
-  useStore.setState({
-    submittedFilters: {
-      query: '',
-      language: null,
-      minStars: 1000,
-      minSizeKb: null,
-      pushedAfter: null,
-      limit: 20,
-      topics: [],
-    },
+  act(() => {
+    useStore.setState({
+      submittedFilters: {
+        query: '',
+        language: null,
+        minStars: 1000,
+        minSizeKb: null,
+        pushedAfter: null,
+        limit: 20,
+        topics: [],
+      },
+    })
   })
 
   const { result } = renderHook(() => useSearch(), { wrapper })
