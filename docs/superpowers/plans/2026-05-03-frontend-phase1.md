@@ -1,6 +1,6 @@
 # Frontend Phase 1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add a FastAPI HTTP layer over the existing Python discovery backend and a Next.js + Tailwind web UI with a filter sidebar, results table, and optional quality score column.
 
@@ -54,7 +54,7 @@
 - Create: `api/routers/search.py`
 - Modify: `pyproject.toml`
 
-- [ ] **Step 1: Add FastAPI and uvicorn dependencies**
+- [x] **Step 1: Add FastAPI and uvicorn dependencies**
 
 ```bash
 uv add fastapi "uvicorn[standard]"
@@ -62,7 +62,7 @@ uv add fastapi "uvicorn[standard]"
 
 Expected: `pyproject.toml` dependencies updated, `.venv` updated.
 
-- [ ] **Step 2: Create package init files**
+- [x] **Step 2: Create package init files**
 
 Create `api/__init__.py` (empty):
 ```python
@@ -72,7 +72,7 @@ Create `api/routers/__init__.py` (empty):
 ```python
 ```
 
-- [ ] **Step 3: Create the search router**
+- [x] **Step 3: Create the search router**
 
 Create `api/routers/search.py`:
 ```python
@@ -116,7 +116,7 @@ def search(
         raise HTTPException(status_code=502, detail="Could not reach GitHub API.")
 ```
 
-- [ ] **Step 4: Create the FastAPI app**
+- [x] **Step 4: Create the FastAPI app**
 
 Create `api/main.py`:
 ```python
@@ -141,7 +141,7 @@ app.add_middleware(
 app.include_router(search_router)
 ```
 
-- [ ] **Step 5: Verify the API starts**
+- [x] **Step 5: Verify the API starts**
 
 ```bash
 uv run uvicorn api.main:app --reload
@@ -149,7 +149,7 @@ uv run uvicorn api.main:app --reload
 
 Expected: `Uvicorn running on http://127.0.0.1:8000`. Open `http://127.0.0.1:8000/docs` — the `/search` endpoint appears in Swagger UI. Stop with Ctrl+C.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/ pyproject.toml uv.lock
@@ -166,13 +166,13 @@ git commit -m "feat: add FastAPI search endpoint"
 - Create: `tests/api/test_search.py`
 - Modify: `pyproject.toml`
 
-- [ ] **Step 1: Add pytest dependency**
+- [x] **Step 1: Add pytest dependency**
 
 ```bash
 uv add --dev pytest
 ```
 
-- [ ] **Step 2: Add pytest config to pyproject.toml**
+- [x] **Step 2: Add pytest config to pyproject.toml**
 
 Add this section to `pyproject.toml`:
 ```toml
@@ -180,7 +180,7 @@ Add this section to `pyproject.toml`:
 pythonpath = ["."]
 ```
 
-- [ ] **Step 3: Create test package init files**
+- [x] **Step 3: Create test package init files**
 
 Create `tests/__init__.py` (empty):
 ```python
@@ -190,7 +190,7 @@ Create `tests/api/__init__.py` (empty):
 ```python
 ```
 
-- [ ] **Step 4: Write the tests**
+- [x] **Step 4: Write the tests**
 
 Create `tests/api/test_search.py`:
 ```python
@@ -277,7 +277,7 @@ def test_search_invalid_limit_zero_returns_422() -> None:
     assert response.status_code == 422
 ```
 
-- [ ] **Step 5: Run tests and verify they pass**
+- [x] **Step 5: Run tests and verify they pass**
 
 ```bash
 uv run pytest tests/api/test_search.py -v
@@ -285,7 +285,7 @@ uv run pytest tests/api/test_search.py -v
 
 Expected: all 6 tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tests/ pyproject.toml uv.lock
@@ -300,7 +300,7 @@ git commit -m "test: add FastAPI search endpoint integration tests"
 - Create: `frontend/` (entire Next.js app)
 - Create: `frontend/components/Providers.tsx`
 
-- [ ] **Step 1: Scaffold the Next.js app**
+- [x] **Step 1: Scaffold the Next.js app**
 
 From the project root:
 ```bash
@@ -316,7 +316,7 @@ npx create-next-app@latest frontend \
 
 Accept all defaults when prompted.
 
-- [ ] **Step 2: Install additional dependencies**
+- [x] **Step 2: Install additional dependencies**
 
 ```bash
 cd frontend
@@ -324,7 +324,7 @@ npm install @tanstack/react-query zustand
 npm install --save-dev vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom jsdom msw
 ```
 
-- [ ] **Step 3: Verify dev server starts**
+- [x] **Step 3: Verify dev server starts**
 
 ```bash
 npm run dev
@@ -332,7 +332,7 @@ npm run dev
 
 Expected: Next.js dev server running at `http://localhost:3000`. Default Next.js page loads. Stop with Ctrl+C.
 
-- [ ] **Step 4: Create the Providers component**
+- [x] **Step 4: Create the Providers component**
 
 Create `frontend/components/Providers.tsx`:
 ```tsx
@@ -360,7 +360,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd ..
@@ -378,7 +378,7 @@ git commit -m "feat: scaffold Next.js frontend with Tailwind, React Query, Zusta
 - Create: `frontend/.env.local`
 - Create: `frontend/.env.local.example`
 
-- [ ] **Step 1: Create shared TypeScript types**
+- [x] **Step 1: Create shared TypeScript types**
 
 Create `frontend/lib/types.ts`:
 ```typescript
@@ -414,7 +414,7 @@ export interface FilterState {
 }
 ```
 
-- [ ] **Step 2: Create the API client**
+- [x] **Step 2: Create the API client**
 
 Create `frontend/lib/api.ts`:
 ```typescript
@@ -451,7 +451,7 @@ export async function searchRepos(filters: FilterState): Promise<RepoResult[]> {
 }
 ```
 
-- [ ] **Step 3: Create env files**
+- [x] **Step 3: Create env files**
 
 Create `frontend/.env.local`:
 ```
@@ -464,7 +464,7 @@ Create `frontend/.env.local.example`:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-- [ ] **Step 4: Verify TypeScript compiles cleanly**
+- [x] **Step 4: Verify TypeScript compiles cleanly**
 
 ```bash
 cd frontend && npx tsc --noEmit
@@ -472,7 +472,7 @@ cd frontend && npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd ..
@@ -489,7 +489,7 @@ Note: do **not** stage `frontend/.env.local` — it contains local config.
 **Files:**
 - Create: `frontend/lib/store.ts`
 
-- [ ] **Step 1: Create the store**
+- [x] **Step 1: Create the store**
 
 Create `frontend/lib/store.ts`:
 ```typescript
@@ -529,7 +529,7 @@ export const useStore = create<StoreState>((set) => ({
 }))
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles cleanly**
+- [x] **Step 2: Verify TypeScript compiles cleanly**
 
 ```bash
 cd frontend && npx tsc --noEmit
@@ -537,7 +537,7 @@ cd frontend && npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd ..
@@ -552,7 +552,7 @@ git commit -m "feat: add Zustand store for filter and UI state"
 **Files:**
 - Create: `frontend/hooks/useSearch.ts`
 
-- [ ] **Step 1: Create the hook**
+- [x] **Step 1: Create the hook**
 
 Create `frontend/hooks/useSearch.ts`:
 ```typescript
@@ -571,7 +571,7 @@ export function useSearch() {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles cleanly**
+- [x] **Step 2: Verify TypeScript compiles cleanly**
 
 ```bash
 cd frontend && npx tsc --noEmit
@@ -579,7 +579,7 @@ cd frontend && npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd ..
@@ -594,7 +594,7 @@ git commit -m "feat: add useSearch React Query hook"
 **Files:**
 - Create: `frontend/components/FilterSidebar.tsx`
 
-- [ ] **Step 1: Create the component**
+- [x] **Step 1: Create the component**
 
 Create `frontend/components/FilterSidebar.tsx`:
 ```tsx
@@ -688,7 +688,7 @@ export function FilterSidebar() {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles cleanly**
+- [x] **Step 2: Verify TypeScript compiles cleanly**
 
 ```bash
 cd frontend && npx tsc --noEmit
@@ -696,7 +696,7 @@ cd frontend && npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd ..
@@ -712,7 +712,7 @@ git commit -m "feat: add FilterSidebar component"
 - Create: `frontend/components/RepoCard.tsx`
 - Create: `frontend/components/RepoTable.tsx`
 
-- [ ] **Step 1: Create RepoCard (a single table row)**
+- [x] **Step 1: Create RepoCard (a single table row)**
 
 Create `frontend/components/RepoCard.tsx`:
 ```tsx
@@ -767,7 +767,7 @@ export function RepoCard({ rank, repo, showScore }: RepoCardProps) {
 }
 ```
 
-- [ ] **Step 2: Create RepoTable**
+- [x] **Step 2: Create RepoTable**
 
 Create `frontend/components/RepoTable.tsx`:
 ```tsx
@@ -869,7 +869,7 @@ export function RepoTable() {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles cleanly**
+- [x] **Step 3: Verify TypeScript compiles cleanly**
 
 ```bash
 cd frontend && npx tsc --noEmit
@@ -877,7 +877,7 @@ cd frontend && npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd ..
@@ -893,7 +893,7 @@ git commit -m "feat: add RepoCard and RepoTable components"
 - Modify: `frontend/app/layout.tsx`
 - Modify: `frontend/app/page.tsx`
 
-- [ ] **Step 1: Replace layout.tsx**
+- [x] **Step 1: Replace layout.tsx**
 
 Overwrite `frontend/app/layout.tsx` with:
 ```tsx
@@ -920,7 +920,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- [ ] **Step 2: Replace page.tsx**
+- [x] **Step 2: Replace page.tsx**
 
 Overwrite `frontend/app/page.tsx` with:
 ```tsx
@@ -941,7 +941,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 3: Manually verify the full UI**
+- [x] **Step 3: Manually verify the full UI**
 
 Terminal 1 — start the API (from project root):
 ```bash
@@ -961,7 +961,7 @@ Open `http://localhost:3000`. Verify:
 - "Show Score" toggle adds/removes the Score column
 - Clicking a repo row opens GitHub in a new tab
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd ..
@@ -980,7 +980,7 @@ git commit -m "feat: wire up main search page layout"
 - Create: `frontend/hooks/useSearch.test.ts`
 - Modify: `frontend/package.json`
 
-- [ ] **Step 1: Create Vitest config**
+- [x] **Step 1: Create Vitest config**
 
 Create `frontend/vitest.config.ts`:
 ```typescript
@@ -1003,14 +1003,14 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 2: Create Vitest setup file**
+- [x] **Step 2: Create Vitest setup file**
 
 Create `frontend/vitest.setup.ts`:
 ```typescript
 import '@testing-library/jest-dom'
 ```
 
-- [ ] **Step 3: Add test scripts to package.json**
+- [x] **Step 3: Add test scripts to package.json**
 
 In `frontend/package.json`, add to the `"scripts"` object:
 ```json
@@ -1018,7 +1018,7 @@ In `frontend/package.json`, add to the `"scripts"` object:
 "test:watch": "vitest"
 ```
 
-- [ ] **Step 4: Create MSW handlers**
+- [x] **Step 4: Create MSW handlers**
 
 Create `frontend/mocks/handlers.ts`:
 ```typescript
@@ -1054,7 +1054,7 @@ export const handlers = [
 ]
 ```
 
-- [ ] **Step 5: Write the hook tests**
+- [x] **Step 5: Write the hook tests**
 
 Create `frontend/hooks/useSearch.test.ts`:
 ```typescript
@@ -1151,7 +1151,7 @@ test('surfaces error message on 502', async () => {
 })
 ```
 
-- [ ] **Step 6: Run tests and verify they pass**
+- [x] **Step 6: Run tests and verify they pass**
 
 ```bash
 cd frontend && npm test
@@ -1159,7 +1159,7 @@ cd frontend && npm test
 
 Expected: 3 tests pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd ..
