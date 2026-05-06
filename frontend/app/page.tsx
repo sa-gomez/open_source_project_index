@@ -8,12 +8,20 @@ export default function Home() {
         Search and explore high-quality open source repositories scored by real-world signals like
         size, activity, community health, and completeness.
       </p>
-      <Link
-        href="/search"
-        className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
-      >
-        Browse Projects
-      </Link>
+      <div className="flex gap-4">
+        <Link
+          href="/browse"
+          className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+        >
+          Browse Index
+        </Link>
+        <Link
+          href="/search"
+          className="px-6 py-3 rounded-lg border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white font-medium transition-colors"
+        >
+          Live Search
+        </Link>
+      </div>
     </main>
   )
 }

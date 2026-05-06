@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Nav } from '@/components/Nav'
 import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
@@ -11,10 +12,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-950 text-gray-100 antialiased">
-        <header className="border-b border-gray-800 px-6 py-4">
-          <h1 className="text-lg font-semibold tracking-tight">Open Source Project Index</h1>
-        </header>
-        <Providers>{children}</Providers>
+        <Providers>
+          <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+            <h1 className="text-lg font-semibold tracking-tight">Open Source Project Index</h1>
+            <Nav />
+          </header>
+          {children}
+        </Providers>
       </body>
     </html>
   )

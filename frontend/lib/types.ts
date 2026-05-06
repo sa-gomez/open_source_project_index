@@ -29,3 +29,20 @@ export interface FilterState {
   limit: number
   topics: string[]
 }
+
+export interface BrowseFilters {
+  language: string | null
+  minStars: number
+  minSizeKb: number | null
+  pushedAfter: string | null
+  topics: string[]
+  limit: number
+  offset: number
+}
+
+export interface BrowsePage {
+  results: RepoResult[]
+  total: number
+  limit: number
+  offset: number
+}

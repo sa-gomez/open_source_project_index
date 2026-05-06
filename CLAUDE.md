@@ -25,6 +25,15 @@ cd frontend && npm test              # run frontend tests (Vitest)
 cd frontend && npm run build         # production build
 ```
 
+## Commands (continued)
+
+```bash
+# Indexer (Phase 2)
+uv run python scripts/indexer.py --dry-run  # preview combos, no writes
+uv run python scripts/indexer.py            # populate repos.db (~27 API calls)
+uv run python scripts/indexer.py --db-path /path/to/other.db
+```
+
 ## Architecture
 
 ```
@@ -32,29 +41,43 @@ src/discovery/
   models.py        # Pydantic models: SearchParams, RepoResult
   github_search.py # GitHub API client + search logic
   scoring.py       # Quality score computation
+  db.py            # SQLAlchemy engine factory + repositories Table definition
+  repository.py    # upsert_repos(), browse_repos() — SQLite adapter
   __init__.py      # exports search_repos, SearchParams, RepoResult
 api/
-  main.py          # FastAPI app factory + CORS (loads .env)
+  main.py          # FastAPI app factory + CORS + lifespan (creates DB tables)
   routers/
-    search.py      # GET /search — wraps search_repos, translates httpx errors
+    search.py      # GET /search — live GitHub search
+    browse.py      # GET /browse → BrowsePage — queries SQLite index
+scripts/
+  indexer.py       # CLI: runs 27 SearchParams combos, upserts into repos.db
 tests/
   api/
     test_search.py # FastAPI integration tests (7 tests)
+    test_browse.py # Browse endpoint tests (6 tests)
 frontend/
   app/
-    layout.tsx     # root layout: header + QueryClientProvider
-    page.tsx       # main search page: FilterSidebar + RepoTable
+    layout.tsx         # root layout: header + nav + Providers
+    page.tsx           # landing page: Browse Index + Live Search CTAs
+    browse/page.tsx    # indexed browse page (auto-fetches on mount)
+    search/page.tsx    # live GitHub search page
   components/
-    FilterSidebar.tsx  # filter form (query, language, topics, stars, size, date, limit)
-    RepoTable.tsx      # results table with skeleton/empty/error states
-    RepoCard.tsx       # single table row
-    Providers.tsx      # React Query QueryClientProvider wrapper
+    FilterSidebar.tsx       # filter form (props-driven, no store coupling)
+    SearchFilterSidebar.tsx # store wrapper for /search
+    BrowseFilterSidebar.tsx # store wrapper for /browse
+    RepoTable.tsx           # live search results table
+    BrowseTable.tsx         # indexed browse table with pagination footer
+    RepoCard.tsx            # single table row (shared)
+    Nav.tsx                 # header nav with active-link highlighting
+    Providers.tsx           # React Query QueryClientProvider wrapper
   hooks/
-    useSearch.ts       # React Query hook, enabled after Search is clicked
+    useSearch.ts    # React Query hook, enabled after Search is clicked
+    useBrowse.ts    # React Query hook, auto-enabled with keepPreviousData
   lib/
-    types.ts       # RepoResult, FilterState TypeScript interfaces
-    api.ts         # searchRepos() fetch wrapper
-    store.ts       # Zustand store: filters, submittedFilters, showScore
+    types.ts    # RepoResult, FilterState, BrowseFilters, BrowsePage interfaces
+    api.ts      # searchRepos(), browseRepos() fetch wrappers
+    store.ts    # Zustand: search filters + browse filters + pagination state
+repos.db           # SQLite index (gitignored; populate with scripts/indexer.py)
 main.py            # CLI demo runner (rich table output)
 ```
 
@@ -89,8 +112,16 @@ Reads `GITHUB_TOKEN` from `.env` (via `python-dotenv`). Falls back to unauthenti
 
 Contributor count is not available via the search API. It requires a separate `GET /repos/{owner}/{repo}/contributors` call per repo. Not yet implemented — forks is used as a proxy in scoring.
 
+### Persistence layer (`repos.db`)
+
+`GET /browse` queries a local SQLite database populated by `scripts/indexer.py`. The DB path defaults to `./repos.db` and can be overridden with the `DB_PATH` env var.
+
+The `repositories` table mirrors `RepoResult` with an extra `indexed_at` timestamp. Topics are stored as a JSON text column. `upsert_repos()` uses `INSERT OR REPLACE` keyed on the GitHub repo `id`, so re-running the indexer refreshes stale data without duplicates.
+
+The browse endpoint supports: `language`, `min_stars`, `min_size_kb`, `pushed_after`, `topics` (multi-value), `limit`, `offset`. Results are ordered by `quality_score DESC`.
+
 ## Next steps
 
-- Phase 2: persistence layer + indexed browse (pre-indexed repo list, no live search)
+- ~~Phase 2: persistence layer + indexed browse~~ ✓ done
 - Phase 3: hybrid — filter cached index with optional live GitHub refresh
 - Optional enrichment pass to fetch per-repo contributor counts
