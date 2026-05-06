@@ -1,15 +1,19 @@
-import { FilterSidebar } from '@/components/FilterSidebar'
-import { RepoTable } from '@/components/RepoTable'
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="flex h-[calc(100vh-57px)]">
-      <aside className="w-[280px] shrink-0 border-r border-gray-800 overflow-y-auto">
-        <FilterSidebar />
-      </aside>
-      <main className="flex-1 overflow-y-auto p-6">
-        <RepoTable />
-      </main>
-    </div>
+    <main className="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-6 text-center">
+      <h2 className="text-3xl font-bold tracking-tight mb-4">Discover Production-Grade Open Source</h2>
+      <p className="text-gray-400 max-w-md mb-8">
+        Search and explore high-quality open source repositories scored by real-world signals like
+        size, activity, community health, and completeness.
+      </p>
+      <Link
+        href="/search"
+        className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+      >
+        Browse Projects
+      </Link>
+    </main>
   )
 }
