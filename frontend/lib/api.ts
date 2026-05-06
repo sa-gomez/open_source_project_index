@@ -1,7 +1,5 @@
 import type { FilterState, RepoResult } from './types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
 export async function searchRepos(filters: FilterState): Promise<RepoResult[]> {
   const params = new URLSearchParams()
 
@@ -15,7 +13,7 @@ export async function searchRepos(filters: FilterState): Promise<RepoResult[]> {
   }
   params.set('limit', String(filters.limit))
 
-  const res = await fetch(`${API_BASE}/search?${params.toString()}`)
+  const res = await fetch(`/api/search?${params.toString()}`)
 
   if (!res.ok) {
     if (res.status === 504) throw new Error('Could not reach the server.')

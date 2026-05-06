@@ -11,7 +11,7 @@ app = FastAPI(title="Open Source Project Index API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=["http://localhost:3000"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
