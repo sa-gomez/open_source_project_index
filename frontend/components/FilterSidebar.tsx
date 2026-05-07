@@ -1,13 +1,32 @@
 'use client'
 
-import { useStore } from '@/lib/store'
+export interface SidebarFilters {
+  query?: string
+  language: string | null
+  minStars: number | null
+  minSizeKb: number | null
+  pushedAfter: string | null
+  limit: number
+}
 
-export function FilterSidebar() {
-  const { filters, setFilter, submitSearch } = useStore()
+interface FilterSidebarProps {
+  filters: SidebarFilters
+  onChange: (key: keyof SidebarFilters, value: SidebarFilters[keyof SidebarFilters]) => void
+  onSubmit: () => void
+  submitLabel?: string
+  showQuery?: boolean
+}
 
+export function FilterSidebar({
+  filters,
+  onChange,
+  onSubmit,
+  submitLabel = 'Search',
+  showQuery = true,
+}: FilterSidebarProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    submitSearch()
+    onSubmit()
   }
 
   const inputClass =
@@ -16,23 +35,25 @@ export function FilterSidebar() {
 
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-4">
-      <div>
-        <label className={labelClass}>Search Query</label>
-        <input
-          type="text"
-          value={filters.query}
-          onChange={(e) => setFilter('query', e.target.value)}
-          placeholder="e.g. machine learning"
-          className={inputClass}
-        />
-      </div>
+      {showQuery && (
+        <div>
+          <label className={labelClass}>Search Query</label>
+          <input
+            type="text"
+            value={filters.query ?? ''}
+            onChange={(e) => onChange('query', e.target.value)}
+            placeholder="e.g. machine learning"
+            className={inputClass}
+          />
+        </div>
+      )}
 
       <div>
         <label className={labelClass}>Language</label>
         <input
           type="text"
           value={filters.language ?? ''}
-          onChange={(e) => setFilter('language', e.target.value || null)}
+          onChange={(e) => onChange('language', e.target.value || null)}
           placeholder="e.g. python"
           className={inputClass}
         />
@@ -44,7 +65,7 @@ export function FilterSidebar() {
           type="number"
           value={filters.minStars ?? ''}
           onChange={(e) =>
-            setFilter('minStars', e.target.value ? Number(e.target.value) : null)
+            onChange('minStars', e.target.value ? Number(e.target.value) : null)
           }
           placeholder="e.g. 1000"
           min={0}
@@ -58,7 +79,7 @@ export function FilterSidebar() {
           type="number"
           value={filters.minSizeKb ?? ''}
           onChange={(e) =>
-            setFilter('minSizeKb', e.target.value ? Number(e.target.value) : null)
+            onChange('minSizeKb', e.target.value ? Number(e.target.value) : null)
           }
           placeholder="e.g. 50000"
           min={0}
@@ -71,7 +92,7 @@ export function FilterSidebar() {
         <input
           type="date"
           value={filters.pushedAfter ?? ''}
-          onChange={(e) => setFilter('pushedAfter', e.target.value || null)}
+          onChange={(e) => onChange('pushedAfter', e.target.value || null)}
           className={inputClass}
         />
       </div>
@@ -81,7 +102,7 @@ export function FilterSidebar() {
         <input
           type="number"
           value={filters.limit}
-          onChange={(e) => setFilter('limit', Number(e.target.value) || 20)}
+          onChange={(e) => onChange('limit', Number(e.target.value) || 20)}
           min={1}
           max={100}
           className={inputClass}
@@ -92,7 +113,7 @@ export function FilterSidebar() {
         type="submit"
         className="w-full rounded bg-blue-600 hover:bg-blue-500 active:bg-blue-700 px-3 py-2 text-sm font-medium transition-colors"
       >
-        Search
+        {submitLabel}
       </button>
     </form>
   )

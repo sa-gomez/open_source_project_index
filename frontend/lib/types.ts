@@ -1,3 +1,15 @@
+export type JobStatus = 'queued' | 'processing' | 'done' | 'failed'
+
+export interface ProcessingJob {
+  id: number
+  repo_id: number
+  status: JobStatus
+  queued_at: string
+  started_at?: string
+  completed_at?: string
+  error_msg?: string
+}
+
 export interface RepoResult {
   id: number
   full_name: string
@@ -18,6 +30,8 @@ export interface RepoResult {
   pushed_at: string
   updated_at: string
   quality_score: number
+  indexed_at?: string
+  job_status?: JobStatus
 }
 
 export interface FilterState {
@@ -28,4 +42,21 @@ export interface FilterState {
   pushedAfter: string | null
   limit: number
   topics: string[]
+}
+
+export interface BrowseFilters {
+  language: string | null
+  minStars: number
+  minSizeKb: number | null
+  pushedAfter: string | null
+  topics: string[]
+  limit: number
+  offset: number
+}
+
+export interface BrowsePage {
+  results: RepoResult[]
+  total: number
+  limit: number
+  offset: number
 }

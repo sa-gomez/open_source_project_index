@@ -29,32 +29,48 @@ cd frontend && npm run build         # production build
 
 ```
 src/discovery/
-  models.py        # Pydantic models: SearchParams, RepoResult
+  models.py        # Pydantic models: SearchParams, RepoResult, ProcessingJob, JobStatus
   github_search.py # GitHub API client + search logic
   scoring.py       # Quality score computation
+  db.py            # SQLAlchemy engine factory + repositories + processing_jobs Table definitions
+  repository.py    # upsert_repos(), browse_repos(), save_repo(), get_saved_ids(), remove_repo()
   __init__.py      # exports search_repos, SearchParams, RepoResult
 api/
-  main.py          # FastAPI app factory + CORS (loads .env)
+  main.py          # FastAPI app factory + CORS + lifespan (creates DB tables)
   routers/
-    search.py      # GET /search — wraps search_repos, translates httpx errors
+    search.py      # GET /search — live GitHub search
+    browse.py      # GET /browse → BrowsePage — queries SQLite index
+    index.py       # POST /index, DELETE /index/{repo_id}, GET /index/ids — curation endpoints
+scripts/
+  indexer.py       # DEPRECATED: superseded by the Save workflow in the UI
 tests/
   api/
     test_search.py # FastAPI integration tests (7 tests)
+    test_browse.py # Browse endpoint tests (6 tests)
 frontend/
   app/
-    layout.tsx     # root layout: header + QueryClientProvider
-    page.tsx       # main search page: FilterSidebar + RepoTable
+    layout.tsx         # root layout: header + nav + Providers
+    page.tsx           # landing page: Browse Index + Live Search CTAs
+    browse/page.tsx    # indexed browse page (auto-fetches on mount)
+    search/page.tsx    # live GitHub search page
   components/
-    FilterSidebar.tsx  # filter form (query, language, topics, stars, size, date, limit)
-    RepoTable.tsx      # results table with skeleton/empty/error states
-    RepoCard.tsx       # single table row
-    Providers.tsx      # React Query QueryClientProvider wrapper
+    FilterSidebar.tsx       # filter form (props-driven, no store coupling)
+    SearchFilterSidebar.tsx # store wrapper for /search
+    BrowseFilterSidebar.tsx # store wrapper for /browse
+    RepoTable.tsx           # live search results: checkboxes, Save buttons, New-only toggle
+    BrowseTable.tsx         # indexed browse: job status badges, Remove buttons, pagination
+    RepoCard.tsx            # single table row (shared; supports save/remove/select/status props)
+    Nav.tsx                 # header nav with active-link highlighting
+    Providers.tsx           # React Query QueryClientProvider wrapper
   hooks/
-    useSearch.ts       # React Query hook, enabled after Search is clicked
+    useSearch.ts    # React Query hook, enabled after Search is clicked
+    useBrowse.ts    # React Query hook, auto-enabled with keepPreviousData
+    useSavedIds.ts  # React Query hook, fetches GET /index/ids and syncs to store
   lib/
-    types.ts       # RepoResult, FilterState TypeScript interfaces
-    api.ts         # searchRepos() fetch wrapper
-    store.ts       # Zustand store: filters, submittedFilters, showScore
+    types.ts    # RepoResult, FilterState, BrowseFilters, BrowsePage, ProcessingJob, JobStatus
+    api.ts      # searchRepos(), browseRepos(), saveRepo(), removeRepo(), getSavedIds()
+    store.ts    # Zustand: search filters + browse filters + pagination + curation state
+repos.db           # SQLite index (gitignored; populated via the Save workflow in the UI)
 main.py            # CLI demo runner (rich table output)
 ```
 
@@ -89,8 +105,26 @@ Reads `GITHUB_TOKEN` from `.env` (via `python-dotenv`). Falls back to unauthenti
 
 Contributor count is not available via the search API. It requires a separate `GET /repos/{owner}/{repo}/contributors` call per repo. Not yet implemented — forks is used as a proxy in scoring.
 
+### Persistence layer (`repos.db`)
+
+Repos are saved manually via the Search page UI, which calls `POST /api/index`. The DB path defaults to `./repos.db` and can be overridden with the `DB_PATH` env var.
+
+**`repositories` table** mirrors `RepoResult`. `indexed_at` is nullable — set by a worker when processing completes, null while queued/processing. Topics are stored as a JSON text column.
+
+**`processing_jobs` table** tracks per-repo processing state:
+
+| Column | Notes |
+|---|---|
+| `repo_id` | FK to repositories.id, UNIQUE (one active job per repo) |
+| `status` | queued \| processing \| done \| failed |
+| `queued_at` | set on save |
+| `started_at / completed_at / error_msg` | set by worker |
+
+`GET /browse` JOINs `repositories` with `processing_jobs` and returns `job_status` on each result. `GET /index/ids` returns all repo IDs currently in the system (any job status), used by the Search page to mark already-saved repos.
+
 ## Next steps
 
-- Phase 2: persistence layer + indexed browse (pre-indexed repo list, no live search)
-- Phase 3: hybrid — filter cached index with optional live GitHub refresh
+- ~~Phase 2: persistence layer + indexed browse~~ ✓ done
+- ~~Phase 3 (partial): manual curation — save repos from Search page~~ ✓ done
+- Phase 3 (remaining): downstream worker to clone + analyze saved repos, set `indexed_at` on completion
 - Optional enrichment pass to fetch per-repo contributor counts
