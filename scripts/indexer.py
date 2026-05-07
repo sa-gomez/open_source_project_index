@@ -1,4 +1,8 @@
 """
+DEPRECATED: This script is superseded by the manual curation workflow in the web UI.
+Use the Search page to find repos and save them individually via POST /api/index.
+This file is kept for reference only.
+
 Populate the repos.db index by running search_repos() across predefined
 SearchParams combos and upserting results.
 

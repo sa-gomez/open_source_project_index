@@ -17,6 +17,18 @@ interface StoreState {
   setBrowseFilter: <K extends keyof BrowseFilters>(key: K, value: BrowseFilters[K]) => void
   submitBrowse: () => void
   setBrowsePage: (page: number) => void
+
+  // curation
+  savedIds: Set<number>
+  showNewOnly: boolean
+  selectedRepos: Set<number>
+  setSavedIds: (ids: Set<number>) => void
+  addSavedId: (id: number) => void
+  removeSavedId: (id: number) => void
+  toggleNewOnly: () => void
+  toggleSelected: (id: number) => void
+  selectAll: (ids: number[]) => void
+  clearSelected: () => void
 }
 
 const defaultFilters: FilterState = {
@@ -75,4 +87,35 @@ export const useStore = create<StoreState>((set) => ({
         offset: page * state.submittedBrowseFilters.limit,
       },
     })),
+
+  // curation
+  savedIds: new Set(),
+  showNewOnly: false,
+  selectedRepos: new Set(),
+
+  setSavedIds: (ids) => set({ savedIds: ids }),
+
+  addSavedId: (id) =>
+    set((state) => ({ savedIds: new Set([...state.savedIds, id]) })),
+
+  removeSavedId: (id) =>
+    set((state) => {
+      const next = new Set(state.savedIds)
+      next.delete(id)
+      return { savedIds: next }
+    }),
+
+  toggleNewOnly: () => set((state) => ({ showNewOnly: !state.showNewOnly })),
+
+  toggleSelected: (id) =>
+    set((state) => {
+      const next = new Set(state.selectedRepos)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return { selectedRepos: next }
+    }),
+
+  selectAll: (ids) => set({ selectedRepos: new Set(ids) }),
+
+  clearSelected: () => set({ selectedRepos: new Set() }),
 }))

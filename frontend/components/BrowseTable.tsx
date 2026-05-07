@@ -1,6 +1,8 @@
 'use client'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { useBrowse } from '@/hooks/useBrowse'
+import { removeRepo } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { RepoCard } from './RepoCard'
 
@@ -17,16 +19,28 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function BrowseTable() {
-  const { showScore, toggleScore, currentPage, setBrowsePage, submittedBrowseFilters } =
+  const { showScore, toggleScore, currentPage, setBrowsePage, submittedBrowseFilters, removeSavedId } =
     useStore()
   const { data, isLoading, error, isFetching } = useBrowse()
-  const colCount = showScore ? 8 : 7
+  const queryClient = useQueryClient()
+  const colCount = showScore ? 9 : 8
 
   const total = data?.total ?? 0
   const limit = submittedBrowseFilters.limit
   const totalPages = Math.ceil(total / limit)
   const startItem = total === 0 ? 0 : currentPage * limit + 1
   const endItem = Math.min((currentPage + 1) * limit, total)
+
+  async function handleRemove(repoId: number) {
+    try {
+      await removeRepo(repoId)
+      removeSavedId(repoId)
+      queryClient.invalidateQueries({ queryKey: ['browse'] })
+      queryClient.invalidateQueries({ queryKey: ['savedIds'] })
+    } catch {
+      // silently fail; user can retry
+    }
+  }
 
   return (
     <div>
@@ -54,9 +68,7 @@ export function BrowseTable() {
 
       {!isLoading && !error && total === 0 && (
         <p className="mt-8 text-center text-sm text-gray-500">
-          No repos indexed yet — run{' '}
-          <code className="font-mono text-gray-400">uv run python scripts/indexer.py</code>{' '}
-          to populate the index.
+          No repos saved yet — use the Search page to find and save repositories.
         </p>
       )}
 
@@ -79,6 +91,7 @@ export function BrowseTable() {
                 <th className="px-3 py-2">Last Push</th>
                 <th className="px-3 py-2 text-right">Size</th>
                 {showScore && <th className="px-3 py-2 text-right">Score</th>}
+                <th className="px-3 py-2 text-right">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -92,6 +105,9 @@ export function BrowseTable() {
                       rank={currentPage * limit + i + 1}
                       repo={repo}
                       showScore={showScore}
+                      isSaved={true}
+                      jobStatus={repo.job_status}
+                      onRemove={() => handleRemove(repo.id)}
                     />
                   ))}
             </tbody>

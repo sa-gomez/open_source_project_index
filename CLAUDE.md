@@ -25,32 +25,24 @@ cd frontend && npm test              # run frontend tests (Vitest)
 cd frontend && npm run build         # production build
 ```
 
-## Commands (continued)
-
-```bash
-# Indexer (Phase 2)
-uv run python scripts/indexer.py --dry-run  # preview combos, no writes
-uv run python scripts/indexer.py            # populate repos.db (~27 API calls)
-uv run python scripts/indexer.py --db-path /path/to/other.db
-```
-
 ## Architecture
 
 ```
 src/discovery/
-  models.py        # Pydantic models: SearchParams, RepoResult
+  models.py        # Pydantic models: SearchParams, RepoResult, ProcessingJob, JobStatus
   github_search.py # GitHub API client + search logic
   scoring.py       # Quality score computation
-  db.py            # SQLAlchemy engine factory + repositories Table definition
-  repository.py    # upsert_repos(), browse_repos() — SQLite adapter
+  db.py            # SQLAlchemy engine factory + repositories + processing_jobs Table definitions
+  repository.py    # upsert_repos(), browse_repos(), save_repo(), get_saved_ids(), remove_repo()
   __init__.py      # exports search_repos, SearchParams, RepoResult
 api/
   main.py          # FastAPI app factory + CORS + lifespan (creates DB tables)
   routers/
     search.py      # GET /search — live GitHub search
     browse.py      # GET /browse → BrowsePage — queries SQLite index
+    index.py       # POST /index, DELETE /index/{repo_id}, GET /index/ids — curation endpoints
 scripts/
-  indexer.py       # CLI: runs 27 SearchParams combos, upserts into repos.db
+  indexer.py       # DEPRECATED: superseded by the Save workflow in the UI
 tests/
   api/
     test_search.py # FastAPI integration tests (7 tests)
@@ -65,19 +57,20 @@ frontend/
     FilterSidebar.tsx       # filter form (props-driven, no store coupling)
     SearchFilterSidebar.tsx # store wrapper for /search
     BrowseFilterSidebar.tsx # store wrapper for /browse
-    RepoTable.tsx           # live search results table
-    BrowseTable.tsx         # indexed browse table with pagination footer
-    RepoCard.tsx            # single table row (shared)
+    RepoTable.tsx           # live search results: checkboxes, Save buttons, New-only toggle
+    BrowseTable.tsx         # indexed browse: job status badges, Remove buttons, pagination
+    RepoCard.tsx            # single table row (shared; supports save/remove/select/status props)
     Nav.tsx                 # header nav with active-link highlighting
     Providers.tsx           # React Query QueryClientProvider wrapper
   hooks/
     useSearch.ts    # React Query hook, enabled after Search is clicked
     useBrowse.ts    # React Query hook, auto-enabled with keepPreviousData
+    useSavedIds.ts  # React Query hook, fetches GET /index/ids and syncs to store
   lib/
-    types.ts    # RepoResult, FilterState, BrowseFilters, BrowsePage interfaces
-    api.ts      # searchRepos(), browseRepos() fetch wrappers
-    store.ts    # Zustand: search filters + browse filters + pagination state
-repos.db           # SQLite index (gitignored; populate with scripts/indexer.py)
+    types.ts    # RepoResult, FilterState, BrowseFilters, BrowsePage, ProcessingJob, JobStatus
+    api.ts      # searchRepos(), browseRepos(), saveRepo(), removeRepo(), getSavedIds()
+    store.ts    # Zustand: search filters + browse filters + pagination + curation state
+repos.db           # SQLite index (gitignored; populated via the Save workflow in the UI)
 main.py            # CLI demo runner (rich table output)
 ```
 
@@ -114,14 +107,24 @@ Contributor count is not available via the search API. It requires a separate `G
 
 ### Persistence layer (`repos.db`)
 
-`GET /browse` queries a local SQLite database populated by `scripts/indexer.py`. The DB path defaults to `./repos.db` and can be overridden with the `DB_PATH` env var.
+Repos are saved manually via the Search page UI, which calls `POST /api/index`. The DB path defaults to `./repos.db` and can be overridden with the `DB_PATH` env var.
 
-The `repositories` table mirrors `RepoResult` with an extra `indexed_at` timestamp. Topics are stored as a JSON text column. `upsert_repos()` uses `INSERT OR REPLACE` keyed on the GitHub repo `id`, so re-running the indexer refreshes stale data without duplicates.
+**`repositories` table** mirrors `RepoResult`. `indexed_at` is nullable — set by a worker when processing completes, null while queued/processing. Topics are stored as a JSON text column.
 
-The browse endpoint supports: `language`, `min_stars`, `min_size_kb`, `pushed_after`, `topics` (multi-value), `limit`, `offset`. Results are ordered by `quality_score DESC`.
+**`processing_jobs` table** tracks per-repo processing state:
+
+| Column | Notes |
+|---|---|
+| `repo_id` | FK to repositories.id, UNIQUE (one active job per repo) |
+| `status` | queued \| processing \| done \| failed |
+| `queued_at` | set on save |
+| `started_at / completed_at / error_msg` | set by worker |
+
+`GET /browse` JOINs `repositories` with `processing_jobs` and returns `job_status` on each result. `GET /index/ids` returns all repo IDs currently in the system (any job status), used by the Search page to mark already-saved repos.
 
 ## Next steps
 
 - ~~Phase 2: persistence layer + indexed browse~~ ✓ done
-- Phase 3: hybrid — filter cached index with optional live GitHub refresh
+- ~~Phase 3 (partial): manual curation — save repos from Search page~~ ✓ done
+- Phase 3 (remaining): downstream worker to clone + analyze saved repos, set `indexed_at` on completion
 - Optional enrichment pass to fetch per-repo contributor counts

@@ -1,12 +1,12 @@
 import json
 from datetime import date, datetime, timezone
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.engine import Engine
 
-from .db import repositories
-from .models import RepoResult
+from .db import processing_jobs, repositories
+from .models import JobStatus, ProcessingJob, RepoResult
 
 
 def upsert_repos(repos: list[RepoResult], engine: Engine) -> int:
@@ -52,6 +52,74 @@ def upsert_repos(repos: list[RepoResult], engine: Engine) -> int:
     return result.rowcount
 
 
+def save_repo(repo: RepoResult, engine: Engine) -> ProcessingJob:
+    now = datetime.now(timezone.utc).isoformat()
+    with engine.begin() as conn:
+        existing = conn.execute(
+            select(processing_jobs).where(processing_jobs.c.repo_id == repo.id)
+        ).first()
+        if existing is not None:
+            raise ValueError(f"Repo {repo.id} already has a processing job")
+
+        repo_row = {
+            "id": repo.id,
+            "full_name": repo.full_name,
+            "description": repo.description,
+            "url": repo.url,
+            "homepage": repo.homepage,
+            "stars": repo.stars,
+            "forks": repo.forks,
+            "watchers": repo.watchers,
+            "open_issues": repo.open_issues,
+            "size": repo.size,
+            "language": repo.language,
+            "topics": json.dumps(repo.topics),
+            "license_name": repo.license_name,
+            "has_issues": repo.has_issues,
+            "has_wiki": repo.has_wiki,
+            "created_at": repo.created_at.isoformat(),
+            "pushed_at": repo.pushed_at.isoformat(),
+            "updated_at": repo.updated_at.isoformat(),
+            "quality_score": repo.quality_score,
+            "indexed_at": None,
+        }
+        repo_stmt = insert(repositories).values([repo_row])
+        repo_stmt = repo_stmt.on_conflict_do_update(
+            index_elements=["id"],
+            set_={c.key: repo_stmt.excluded[c.key] for c in repositories.c if c.key != "id"},
+        )
+        conn.execute(repo_stmt)
+
+        job_result = conn.execute(
+            insert(processing_jobs).values(
+                repo_id=repo.id,
+                status="queued",
+                queued_at=now,
+            )
+        )
+        job_id = job_result.lastrowid
+
+    return ProcessingJob(
+        id=job_id,
+        repo_id=repo.id,
+        status=JobStatus.queued,
+        queued_at=now,
+    )
+
+
+def get_saved_ids(engine: Engine) -> set[int]:
+    with engine.connect() as conn:
+        rows = conn.execute(select(repositories.c.id)).all()
+    return {row[0] for row in rows}
+
+
+def remove_repo(repo_id: int, engine: Engine) -> bool:
+    with engine.begin() as conn:
+        conn.execute(delete(processing_jobs).where(processing_jobs.c.repo_id == repo_id))
+        result = conn.execute(delete(repositories).where(repositories.c.id == repo_id))
+    return result.rowcount > 0
+
+
 def browse_repos(
     engine: Engine,
     *,
@@ -77,12 +145,15 @@ def browse_repos(
 
     where_clause = and_(*conditions) if conditions else True
 
+    j = repositories.outerjoin(processing_jobs, repositories.c.id == processing_jobs.c.repo_id)
+
     with engine.connect() as conn:
         count_stmt = select(func.count()).select_from(repositories).where(where_clause)
         total = conn.execute(count_stmt).scalar_one()
 
         rows_stmt = (
-            select(repositories)
+            select(repositories, processing_jobs.c.status.label("job_status"))
+            .select_from(j)
             .where(where_clause)
             .order_by(repositories.c.quality_score.desc())
             .limit(limit)
@@ -111,6 +182,8 @@ def browse_repos(
             pushed_at=row["pushed_at"],
             updated_at=row["updated_at"],
             quality_score=row["quality_score"],
+            indexed_at=row["indexed_at"],
+            job_status=row["job_status"],
         )
         for row in rows
     ]

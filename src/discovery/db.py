@@ -37,12 +37,25 @@ repositories = Table(
     Column("pushed_at", Text, nullable=False),
     Column("updated_at", Text, nullable=False),
     Column("quality_score", Float, nullable=False, server_default="0.0"),
-    Column("indexed_at", Text, nullable=False),
+    Column("indexed_at", Text, nullable=True),  # set by worker on completion
     Index("idx_repos_language", "language"),
     Index("idx_repos_stars", "stars"),
     Index("idx_repos_pushed_at", "pushed_at"),
     Index("idx_repos_size", "size"),
     Index("idx_repos_quality_score", "quality_score"),
+)
+
+processing_jobs = Table(
+    "processing_jobs",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("repo_id", Integer, nullable=False, unique=True),
+    Column("status", Text, nullable=False, server_default="queued"),
+    Column("queued_at", Text, nullable=False),
+    Column("started_at", Text, nullable=True),
+    Column("completed_at", Text, nullable=True),
+    Column("error_msg", Text, nullable=True),
+    Index("idx_jobs_status", "status"),
 )
 
 _engine: Engine | None = None

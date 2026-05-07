@@ -1,4 +1,4 @@
-import type { BrowseFilters, BrowsePage, FilterState, RepoResult } from './types'
+import type { BrowseFilters, BrowsePage, FilterState, ProcessingJob, RepoResult } from './types'
 
 export async function searchRepos(filters: FilterState): Promise<RepoResult[]> {
   const params = new URLSearchParams()
@@ -58,4 +58,37 @@ export async function browseRepos(filters: BrowseFilters): Promise<BrowsePage> {
   }
 
   return res.json() as Promise<BrowsePage>
+}
+
+export async function saveRepo(repo: RepoResult): Promise<ProcessingJob> {
+  const res = await fetch('/api/index', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(repo),
+  })
+
+  if (!res.ok) {
+    if (res.status === 409) throw new Error('Repo already saved.')
+    throw new Error(`Unexpected error: ${res.status}`)
+  }
+
+  return res.json() as Promise<ProcessingJob>
+}
+
+export async function removeRepo(repoId: number): Promise<void> {
+  const res = await fetch(`/api/index/${repoId}`, { method: 'DELETE' })
+
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('Repo not found.')
+    throw new Error(`Unexpected error: ${res.status}`)
+  }
+}
+
+export async function getSavedIds(): Promise<Set<number>> {
+  const res = await fetch('/api/index/ids')
+
+  if (!res.ok) throw new Error(`Unexpected error: ${res.status}`)
+
+  const data = (await res.json()) as { ids: number[] }
+  return new Set(data.ids)
 }
