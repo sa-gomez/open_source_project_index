@@ -53,15 +53,17 @@ export function RepoCard({
       {onToggleSelect !== undefined && (
         <td
           className="px-3 py-2"
-          onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
+          onClick={(e) => { e.stopPropagation(); if (!isSaved) onToggleSelect() }}
         >
-          <input
-            type="checkbox"
-            checked={isSelected ?? false}
-            disabled={isSaved}
-            onChange={onToggleSelect}
-            className="accent-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          />
+          {!isSaved && (
+            <input
+              type="checkbox"
+              checked={isSelected ?? false}
+              onChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="accent-blue-500 cursor-pointer"
+            />
+          )}
         </td>
       )}
       <td className="px-3 py-2 text-gray-500 text-sm">{rank}</td>
@@ -98,6 +100,11 @@ export function RepoCard({
               className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${JOB_STATUS_COLORS[jobStatus]}`}
             >
               {jobStatus}
+            </span>
+          )}
+          {isSaved && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-700 text-xs font-medium bg-green-900/30 text-green-400">
+              Saved
             </span>
           )}
           {!isSaved && onSave && (

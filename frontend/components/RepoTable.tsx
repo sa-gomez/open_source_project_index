@@ -24,6 +24,7 @@ export function RepoTable() {
   const { showScore, toggleScore, submittedFilters, savedIds, addSavedId, showNewOnly, toggleNewOnly, selectedRepos, toggleSelected, selectAll, clearSelected } = useStore()
   const { data, isLoading, error } = useSearch()
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set())
+  const [saveError, setSaveError] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   useSavedIds()
@@ -45,8 +46,8 @@ export function RepoTable() {
       await saveRepo(repo)
       addSavedId(repoId)
       queryClient.invalidateQueries({ queryKey: ['savedIds'] })
-    } catch {
-      // error is surfaced elsewhere; just stop spinner
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save repo.')
     } finally {
       setSavingIds((prev) => {
         const next = new Set(prev)
@@ -112,6 +113,12 @@ export function RepoTable() {
       {error && (
         <div className="mb-4 rounded border border-red-700 bg-red-900/30 px-4 py-2.5 text-sm text-red-300">
           {error instanceof Error ? error.message : 'An unexpected error occurred.'}
+        </div>
+      )}
+      {saveError && (
+        <div className="mb-4 rounded border border-red-700 bg-red-900/30 px-4 py-2.5 text-sm text-red-300 flex items-center justify-between">
+          <span>Save failed: {saveError}</span>
+          <button onClick={() => setSaveError(null)} className="ml-4 text-red-400 hover:text-red-200">✕</button>
         </div>
       )}
 
