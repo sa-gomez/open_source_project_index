@@ -10,6 +10,7 @@ from sqlalchemy import (
     Table,
     Text,
     create_engine,
+    text,
 )
 from sqlalchemy.engine import Engine
 
@@ -38,6 +39,7 @@ repositories = Table(
     Column("updated_at", Text, nullable=False),
     Column("quality_score", Float, nullable=False, server_default="0.0"),
     Column("indexed_at", Text, nullable=True),  # set by worker on completion
+    Column("sample_text", Text, nullable=True),
     Index("idx_repos_language", "language"),
     Index("idx_repos_stars", "stars"),
     Index("idx_repos_pushed_at", "pushed_at"),
@@ -74,3 +76,11 @@ def get_engine(db_path: str | None = None) -> Engine:
 
 def create_tables(engine: Engine) -> None:
     metadata.create_all(engine)
+
+
+def migrate_db(engine: Engine) -> None:
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE repositories ADD COLUMN sample_text TEXT"))
+        except Exception:
+            pass  # column already exists

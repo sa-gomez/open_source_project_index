@@ -56,3 +56,4 @@ htmlcov/
 coverage.json
 frontend/coverage/
 repos.db
+clones/
