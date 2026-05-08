@@ -54,14 +54,12 @@ export function RepoCard({
   function handleRowClick() {
     if (detailPath) {
       router.push(detailPath)
-    } else {
-      window.open(repo.url, '_blank', 'noopener,noreferrer')
     }
   }
 
   return (
     <tr
-      className="border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors"
+      className={`border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${detailPath ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={handleRowClick}
     >
       {onToggleSelect !== undefined && (
@@ -82,7 +80,15 @@ export function RepoCard({
       )}
       <td className="px-3 py-2 text-gray-500 text-sm">{rank}</td>
       <td className="px-3 py-2 max-w-xs">
-        <div className="font-medium text-sm text-blue-400 truncate">{repo.full_name}</div>
+        <a
+          href={repo.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="font-medium text-sm text-blue-400 truncate hover:underline block"
+        >
+          {repo.full_name}
+        </a>
         {repo.description && (
           <div className="text-xs text-gray-400 mt-0.5 truncate">{repo.description}</div>
         )}
