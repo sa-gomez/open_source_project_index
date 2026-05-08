@@ -32,8 +32,9 @@ src/discovery/
   models.py        # Pydantic models: SearchParams, RepoResult, ProcessingJob, JobStatus
   github_search.py # GitHub API client + search logic
   scoring.py       # Quality score computation
-  db.py            # SQLAlchemy engine factory + repositories + processing_jobs Table definitions
+  db.py            # SQLAlchemy engine factory + repositories + processing_jobs Table definitions + migrate_db()
   repository.py    # upsert_repos(), browse_repos(), save_repo(), get_saved_ids(), remove_repo()
+  worker.py        # Background worker: polls queued jobs, git-clones repos, extracts sample_text
   __init__.py      # exports search_repos, SearchParams, RepoResult
 api/
   main.py          # FastAPI app factory + CORS + lifespan (creates DB tables)
@@ -122,9 +123,21 @@ Repos are saved manually via the Search page UI, which calls `POST /api/index`. 
 
 `GET /browse` JOINs `repositories` with `processing_jobs` and returns `job_status` on each result. `GET /index/ids` returns all repo IDs currently in the system (any job status), used by the Search page to mark already-saved repos.
 
+## Worker (`src/discovery/worker.py`)
+
+Starts as a daemon thread in the FastAPI lifespan. Polls `processing_jobs` for `status=queued` every 5 seconds. For each job:
+1. Marks job `processing`
+2. `git clone --depth=1` the repo into `clones/<owner>/<repo>/`
+3. Finds README.md first, falls back to any source file (`.py`, `.ts`, `.go`, etc.)
+4. Reads first 3000 chars into `repositories.sample_text`
+5. Sets `indexed_at` on the repo and marks job `done`; sets `failed` + `error_msg` on any exception
+
+Clones are stored in `./clones/` (gitignored). `sample_text` is currently a placeholder — the analysis logic will be replaced in a future phase.
+
 ## Next steps
 
 - ~~Phase 2: persistence layer + indexed browse~~ ✓ done
 - ~~Phase 3 (partial): manual curation — save repos from Search page~~ ✓ done
-- Phase 3 (remaining): downstream worker to clone + analyze saved repos, set `indexed_at` on completion
+- ~~Phase 3 (remaining): worker that clones + extracts sample text, sets `indexed_at`~~ ✓ done
+- Phase 4: replace `sample_text` placeholder with real analysis (embeddings, summaries, structured extraction, etc.)
 - Optional enrichment pass to fetch per-repo contributor counts

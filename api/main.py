@@ -1,3 +1,5 @@
+import logging
+import threading
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -7,16 +9,22 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.discovery.db import create_tables, get_engine
+from src.discovery.db import create_tables, get_engine, migrate_db
+from src.discovery.worker import run_worker
 
 from .routers.browse import router as browse_router
 from .routers.index import router as index_router
 from .routers.search import router as search_router
 
+logging.basicConfig(level=logging.INFO)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables(get_engine())
+    engine = get_engine()
+    create_tables(engine)
+    migrate_db(engine)
+    threading.Thread(target=run_worker, args=(engine,), daemon=True).start()
     yield
 
 
