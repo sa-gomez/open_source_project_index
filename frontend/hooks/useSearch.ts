@@ -12,5 +12,6 @@ export function useSearch() {
       return searchRepos(submittedFilters)
     },
     enabled: submittedFilters !== null,
+    staleTime: Infinity,
   })
 }
