@@ -120,6 +120,42 @@ def remove_repo(repo_id: int, engine: Engine) -> bool:
     return result.rowcount > 0
 
 
+def get_repo_by_id(repo_id: int, engine: Engine) -> RepoResult | None:
+    j = repositories.outerjoin(processing_jobs, repositories.c.id == processing_jobs.c.repo_id)
+    stmt = (
+        select(repositories, processing_jobs.c.status.label("job_status"))
+        .select_from(j)
+        .where(repositories.c.id == repo_id)
+    )
+    with engine.connect() as conn:
+        row = conn.execute(stmt).mappings().first()
+    if row is None:
+        return None
+    return RepoResult(
+        id=row["id"],
+        full_name=row["full_name"],
+        description=row["description"],
+        url=row["url"],
+        homepage=row["homepage"],
+        stars=row["stars"],
+        forks=row["forks"],
+        watchers=row["watchers"],
+        open_issues=row["open_issues"],
+        size=row["size"],
+        language=row["language"],
+        topics=json.loads(row["topics"]),
+        license_name=row["license_name"],
+        has_issues=bool(row["has_issues"]),
+        has_wiki=bool(row["has_wiki"]),
+        created_at=row["created_at"],
+        pushed_at=row["pushed_at"],
+        updated_at=row["updated_at"],
+        quality_score=row["quality_score"],
+        indexed_at=row["indexed_at"],
+        job_status=row["job_status"],
+    )
+
+
 def browse_repos(
     engine: Engine,
     *,

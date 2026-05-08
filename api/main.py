@@ -11,6 +11,7 @@ from src.discovery.db import create_tables, get_engine
 
 from .routers.browse import router as browse_router
 from .routers.index import router as index_router
+from .routers.repo import router as repo_router
 from .routers.search import router as search_router
 
 
@@ -32,3 +33,4 @@ app.add_middleware(
 app.include_router(search_router)
 app.include_router(browse_router)
 app.include_router(index_router)
+app.include_router(repo_router)
