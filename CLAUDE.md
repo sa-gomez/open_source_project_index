@@ -33,7 +33,7 @@ src/discovery/
   github_search.py # GitHub API client + search logic
   scoring.py       # Quality score computation
   db.py            # SQLAlchemy engine factory + repositories + processing_jobs Table definitions + migrate_db()
-  repository.py    # upsert_repos(), browse_repos(), save_repo(), get_saved_ids(), remove_repo()
+  repository.py    # upsert_repos(), browse_repos(), get_repo_by_id(), save_repo(), get_saved_ids(), remove_repo()
   worker.py        # Background worker: polls queued jobs, git-clones repos, extracts sample_text
   __init__.py      # exports search_repos, SearchParams, RepoResult
 api/
@@ -42,6 +42,7 @@ api/
     search.py      # GET /search — live GitHub search
     browse.py      # GET /browse → BrowsePage — queries SQLite index
     index.py       # POST /index, DELETE /index/{repo_id}, GET /index/ids — curation endpoints
+    repo.py        # GET /repos/{repo_id} → RepoResult — single repo detail
 scripts/
   indexer.py       # DEPRECATED: superseded by the Save workflow in the UI
 tests/
@@ -54,22 +55,24 @@ frontend/
     page.tsx           # landing page: Browse Index + Live Search CTAs
     browse/page.tsx    # indexed browse page (auto-fetches on mount)
     search/page.tsx    # live GitHub search page
+    repos/[id]/page.tsx # repo detail page — all stored data for a single saved repo
   components/
     FilterSidebar.tsx       # filter form (props-driven, no store coupling)
     SearchFilterSidebar.tsx # store wrapper for /search
     BrowseFilterSidebar.tsx # store wrapper for /browse
     RepoTable.tsx           # live search results: checkboxes, Save buttons, New-only toggle
     BrowseTable.tsx         # indexed browse: job status badges, Remove buttons, pagination
-    RepoCard.tsx            # single table row (shared; supports save/remove/select/status props)
+    RepoCard.tsx            # single table row (shared; supports save/remove/select/status/detailPath props)
     Nav.tsx                 # header nav with active-link highlighting
     Providers.tsx           # React Query QueryClientProvider wrapper
   hooks/
     useSearch.ts    # React Query hook, enabled after Search is clicked
     useBrowse.ts    # React Query hook, auto-enabled with keepPreviousData
     useSavedIds.ts  # React Query hook, fetches GET /index/ids and syncs to store
+    useRepo.ts      # React Query hook, fetches GET /repos/{id} for detail page
   lib/
     types.ts    # RepoResult, FilterState, BrowseFilters, BrowsePage, ProcessingJob, JobStatus
-    api.ts      # searchRepos(), browseRepos(), saveRepo(), removeRepo(), getSavedIds()
+    api.ts      # searchRepos(), browseRepos(), getRepo(), saveRepo(), removeRepo(), getSavedIds()
     store.ts    # Zustand: search filters + browse filters + pagination + curation state
 repos.db           # SQLite index (gitignored; populated via the Save workflow in the UI)
 main.py            # CLI demo runner (rich table output)
@@ -121,7 +124,7 @@ Repos are saved manually via the Search page UI, which calls `POST /api/index`. 
 | `queued_at` | set on save |
 | `started_at / completed_at / error_msg` | set by worker |
 
-`GET /browse` JOINs `repositories` with `processing_jobs` and returns `job_status` on each result. `GET /index/ids` returns all repo IDs currently in the system (any job status), used by the Search page to mark already-saved repos.
+`GET /browse` JOINs `repositories` with `processing_jobs` and returns `job_status` on each result. `GET /repos/{id}` returns the same JOIN for a single repo (used by the detail page). `GET /index/ids` returns all repo IDs currently in the system (any job status), used by the Search page to mark already-saved repos.
 
 ## Worker (`src/discovery/worker.py`)
 
