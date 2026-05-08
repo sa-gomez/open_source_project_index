@@ -108,6 +108,7 @@ export function BrowseTable() {
                       isSaved={true}
                       jobStatus={repo.job_status}
                       onRemove={() => handleRemove(repo.id)}
+                      detailPath={`/repos/${repo.id}`}
                     />
                   ))}
             </tbody>

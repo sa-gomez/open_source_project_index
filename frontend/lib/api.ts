@@ -84,6 +84,18 @@ export async function removeRepo(repoId: number): Promise<void> {
   }
 }
 
+export async function getRepo(id: number): Promise<RepoResult> {
+  const res = await fetch(`/api/repos/${id}`)
+
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('Repository not found.')
+    if (res.status === 504) throw new Error('Could not reach the server.')
+    throw new Error(`Unexpected error: ${res.status}`)
+  }
+
+  return res.json() as Promise<RepoResult>
+}
+
 export async function getSavedIds(): Promise<Set<number>> {
   const res = await fetch('/api/index/ids')
 

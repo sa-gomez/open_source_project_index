@@ -174,6 +174,7 @@ export function RepoTable() {
                       isSelected={selectedRepos.has(repo.id)}
                       onToggleSelect={() => toggleSelected(repo.id)}
                       isSaving={savingIds.has(repo.id)}
+                      detailPath={savedIds.has(repo.id) ? `/repos/${repo.id}` : undefined}
                     />
                   ))}
             </tbody>

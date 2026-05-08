@@ -1,3 +1,6 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
 import type { JobStatus, RepoResult } from '@/lib/types'
 
 function formatSize(sizeKb: number): string {
@@ -29,6 +32,7 @@ interface RepoCardProps {
   isSelected?: boolean
   onToggleSelect?: () => void
   isSaving?: boolean
+  detailPath?: string
 }
 
 export function RepoCard({
@@ -42,13 +46,23 @@ export function RepoCard({
   isSelected,
   onToggleSelect,
   isSaving,
+  detailPath,
 }: RepoCardProps) {
+  const router = useRouter()
   const pushedDate = new Date(repo.pushed_at).toISOString().slice(0, 10)
+
+  function handleRowClick() {
+    if (detailPath) {
+      router.push(detailPath)
+    } else {
+      window.open(repo.url, '_blank', 'noopener,noreferrer')
+    }
+  }
 
   return (
     <tr
       className="border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors"
-      onClick={() => window.open(repo.url, '_blank', 'noopener,noreferrer')}
+      onClick={handleRowClick}
     >
       {onToggleSelect !== undefined && (
         <td
@@ -102,7 +116,7 @@ export function RepoCard({
               {jobStatus}
             </span>
           )}
-          {isSaved && (
+          {isSaved && !jobStatus && (
             <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-700 text-xs font-medium bg-green-900/30 text-green-400">
               Saved
             </span>
